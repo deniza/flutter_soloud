@@ -19,8 +19,8 @@
 #include <memory>
 #include <filesystem>
 
-#include <TargetConditionals.h> // Include this header for target OS macros
-#include <string.h> // Include this header for strcpy (required for IOS 12 compatibility)
+#include <TargetConditionals.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -344,8 +344,14 @@ extern "C"
         // Use std::filesystem for iOS >= 13.0
         std::filesystem::path pa = std::filesystem::u8path(completeFileName);
         unsigned int hash = 0;
+        // std::thread loadThread([p, pa, completeFileName, loadIntoMem, hash]()
+        //                        {
         PlayerErrors error = p->loadFile(pa.string(), loadIntoMem, (unsigned int*)&hash);
+        // printf("*** LOAD FILE FROM THREAD error: %d  hash: %u\n", error,  *hash);
         fileLoadedCallback(error, completeFileName, (unsigned int*)&hash);
+            // });
+        // // TODO(marco): use .detach()? Use std::atomic somewhere
+        // loadThread.join();      
     #endif
     }
 
