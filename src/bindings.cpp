@@ -19,6 +19,9 @@
 #include <memory>
 #include <filesystem>
 
+#include <TargetConditionals.h> // Include this header for target OS macros
+#include <string.h> // Include this header for strcpy (required for IOS 12 compatibility)
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -332,17 +335,18 @@ extern "C"
                    "Please report the bug.\n");
             return;
         }
-
+    #if TARGET_OS_IOS && __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_13_0
+        // Use alternative method for iOS < 13.0
+        unsigned int hash = 0;
+        PlayerErrors error = p->loadFile(std::string(completeFileName), loadIntoMem, (unsigned int*)&hash);
+        fileLoadedCallback(error, completeFileName, (unsigned int*)&hash);
+    #else
+        // Use std::filesystem for iOS >= 13.0
         std::filesystem::path pa = std::filesystem::u8path(completeFileName);
         unsigned int hash = 0;
-        // std::thread loadThread([p, pa, completeFileName, loadIntoMem, hash]()
-        //                        {
         PlayerErrors error = p->loadFile(pa.string(), loadIntoMem, (unsigned int*)&hash);
-        // printf("*** LOAD FILE FROM THREAD error: %d  hash: %u\n", error,  *hash);
         fileLoadedCallback(error, completeFileName, (unsigned int*)&hash);
-            // });
-        // // TODO(marco): use .detach()? Use std::atomic somewhere
-        // loadThread.join();
+    #endif
     }
 
     /// Load a new sound stored into [buffer] to be played once or multiple times later.
